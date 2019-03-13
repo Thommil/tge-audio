@@ -25,3 +25,27 @@ func (p *plugin) Init(runtime tge.Runtime) error {
 func (p *plugin) Dispose() {
 	p.isInit = false
 }
+
+// -------------------------------------------------------------------- //
+// Implementation
+// -------------------------------------------------------------------- //
+
+func createBuffer(data []byte) (Buffer, error) {
+	return nil, nil
+}
+
+func createBufferSourceNode(buffer Buffer) (BufferSourceNode, error) {
+	return nil, nil
+}
+
+func createDestinationNode() (DestinationNode, error) {
+	return nil, nil
+}
+
+func createStereoPannerNode() (StereoPannerNode, error) {
+	return nil, nil
+}
+
+func createGainNode() (GainNode, error) {
+	return nil, nil
+}
