@@ -30,18 +30,21 @@ func (p *plugin) GetName() string {
 // -------------------------------------------------------------------- //
 
 // Buffer interface represents a short audio asset residing in memory, created from an audio file
+// See https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer
 type Buffer interface {
 }
 
 // Node interface is a generic interface for representing an audio processing module.
+// See https://developer.mozilla.org/en-US/docs/Web/API/AudioNode
 type Node interface {
 	// Connect the node output to given node
-	Connect(node Node)
+	Connect(node Node) Node
 	// Disconnect the node output from the given node
 	Disconnect(node Node)
 }
 
 // BufferSourceNode interface represents an audio source consisting of in-memory audio data, stored in an AudioBuffer
+// See https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode
 type BufferSourceNode interface {
 	Node
 	// Start playing node, loopStart and loopEnd is given in seconds
@@ -51,16 +54,19 @@ type BufferSourceNode interface {
 }
 
 // MediaElementSourceNode interface represents an external audio source for continuous play (music)
+// See https://developer.mozilla.org/en-US/docs/Web/API/MediaElementAudioSourceNode
 type MediaElementSourceNode interface {
 	Node
 }
 
 // DestinationNode interface represents the end destination of an audio graph in a given context — usually the speakers of your device
+// See https://developer.mozilla.org/en-US/docs/Web/API/AudioDestinationNode
 type DestinationNode interface {
 	Node
 }
 
 // StereoPannerNode interface represents a simple stereo panner node that can be used to pan an audio stream left or right
+// See https://developer.mozilla.org/en-US/docs/Web/API/StereoPannerNode
 type StereoPannerNode interface {
 	Node
 	// Pan the output from -1 left to 1 right
@@ -68,15 +74,16 @@ type StereoPannerNode interface {
 }
 
 // GainNode interface represents a change in volume
+// See https://developer.mozilla.org/en-US/docs/Web/API/GainNode
 type GainNode interface {
 	Node
 	// Gain changes the output volume from 0 silence to 1 full
 	Gain(value float32)
 }
 
-// CreateBuffer creates a Buffer from an array of bytes (directly from file data)
-func CreateBuffer(data []byte) (Buffer, error) {
-	return createBuffer(data)
+// CreateBuffer creates a Buffer from an assets path
+func CreateBuffer(path string) (Buffer, error) {
+	return createBuffer(path)
 }
 
 // CreateNode creates a new custom node, not implemented yet
@@ -89,7 +96,7 @@ func CreateBufferSourceNode(buffer Buffer) (BufferSourceNode, error) {
 	return createBufferSourceNode(buffer)
 }
 
-// CreateMediaElementSourceNode creates a new MediaElementSourceNode, not implemented yet
+// CreateMediaElementSourceNode creates a new MediaElementSourceNode from an assets path, not implemented yet
 func CreateMediaElementSourceNode(path string) (MediaElementSourceNode, error) {
 	return nil, fmt.Errorf("not implemented yet")
 }

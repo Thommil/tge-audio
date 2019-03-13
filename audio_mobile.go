@@ -33,7 +33,7 @@ func (p *plugin) Dispose() {
 // Implementation
 // -------------------------------------------------------------------- //
 
-func createBuffer(data []byte) (Buffer, error) {
+func createBuffer(path string) (Buffer, error) {
 	return nil, nil
 }
 
