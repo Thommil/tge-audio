@@ -60,7 +60,6 @@ import (
 type AudioApp struct {
 	runtime         tge.Runtime
 	audioInit       bool
-	sampleData      []byte
 	sampleBuffer    audio.Buffer
 	stereoPanNode   audio.StereoPannerNode
 	gainNode        audio.GainNode

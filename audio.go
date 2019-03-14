@@ -48,7 +48,7 @@ type Node interface {
 type BufferSourceNode interface {
 	Node
 	// Start playing node, loopStart and loopEnd is given in seconds
-	Start(loop bool, loopStart, loopEnd float32)
+	Start(offset, duration float32, loop bool)
 	// Stop playing node
 	Stop()
 }

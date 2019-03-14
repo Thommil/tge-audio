@@ -83,11 +83,9 @@ type bufferSourceNode struct {
 	node
 }
 
-func (n *bufferSourceNode) Start(loop bool, loopStart, loopEnd float32) {
+func (n *bufferSourceNode) Start(offset, duration float32, loop bool) {
 	n.value.Set("loop", loop)
-	n.value.Set("loopStart", loopStart)
-	n.value.Set("loopEnd", loopEnd)
-	n.value.Call("start")
+	n.value.Call("start", 0, offset, duration)
 }
 
 func (n *bufferSourceNode) Stop() {
