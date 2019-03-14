@@ -47,8 +47,17 @@ type Node interface {
 // See https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode
 type BufferSourceNode interface {
 	Node
-	// Start playing node, loopStart and loopEnd is given in seconds
-	Start(offset, duration float32, loop bool)
+	// Start playing node with given settings :
+	//	- delay before playing in seconds, 0 to start immediatly
+	//	- offset in seconds in buffer, 0 to start from beginning
+	//	- duration of the sample to play in seconds, 0 to play to end
+	//	- loop indicates to play in loops
+	//	- loopStart if loop is set is the offset in seconds of the loop (0 for beginning)
+	//	- loopEnd if loop is set is the end of the loop in seconds (0 to play to end)
+	//
+	//	... so to just play the sample :
+	//	 Start(0, 0, 0, false, 0, 0)
+	Start(delay, offset, duration float32, loop bool, loopStart, loopEnd float32)
 	// Stop playing node
 	Stop()
 }
