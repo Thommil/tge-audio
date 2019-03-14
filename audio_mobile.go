@@ -41,6 +41,10 @@ func createBufferSourceNode(buffer Buffer) (BufferSourceNode, error) {
 	return nil, nil
 }
 
+func createMediaElementSourceNode(path string) (MediaElementSourceNode, error) {
+	return nil, nil
+}
+
 func createDestinationNode() (DestinationNode, error) {
 	return nil, nil
 }

@@ -66,6 +66,10 @@ type BufferSourceNode interface {
 // See https://developer.mozilla.org/en-US/docs/Web/API/MediaElementAudioSourceNode
 type MediaElementSourceNode interface {
 	Node
+	// Play the attached media with loop option
+	Play(loop bool)
+	// Pause the attached media
+	Pause()
 }
 
 // DestinationNode interface represents the end destination of an audio graph in a given context — usually the speakers of your device
@@ -107,7 +111,7 @@ func CreateBufferSourceNode(buffer Buffer) (BufferSourceNode, error) {
 
 // CreateMediaElementSourceNode creates a new MediaElementSourceNode from an assets path, not implemented yet
 func CreateMediaElementSourceNode(path string) (MediaElementSourceNode, error) {
-	return nil, fmt.Errorf("not implemented yet")
+	return createMediaElementSourceNode(path)
 }
 
 // CreateDestinationNode creates a new DestinationNode to connect audio graph output

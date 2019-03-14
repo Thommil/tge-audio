@@ -105,6 +105,16 @@ func (n *bufferSourceNode) Stop() {
 
 type mediaElementSourceNode struct {
 	node
+	htmlElement *js.Value
+}
+
+func (n *mediaElementSourceNode) Play(loop bool) {
+	n.htmlElement.Set("loop", loop)
+	n.htmlElement.Call("play")
+}
+
+func (n *mediaElementSourceNode) Pause() {
+	n.htmlElement.Call("pause")
 }
 
 type destinationNode struct {
@@ -199,6 +209,28 @@ func createBufferSourceNode(buf Buffer) (BufferSourceNode, error) {
 
 	node := &bufferSourceNode{}
 	node.value = &jsBufferSourceNode
+
+	return node, nil
+}
+
+func createMediaElementSourceNode(path string) (MediaElementSourceNode, error) {
+	if !_pluginInstance.isInit {
+		if err := createContext(); err != nil {
+			return nil, err
+		}
+	}
+
+	jsMediaElementObjet := _pluginInstance.jsTge.Call("createMediaAudioElement", *(_pluginInstance.audioCtx), path)
+
+	if jsMediaElementObjet == js.Undefined() || jsMediaElementObjet == js.Null() {
+		return nil, fmt.Errorf("failed to create JS MediaElementSourceNode")
+	}
+
+	node := &mediaElementSourceNode{}
+	jsMediaElementSourceNode := jsMediaElementObjet.Get("mediaAudioElement")
+	jsHtmlElement := jsMediaElementObjet.Get("htmlElement")
+	node.value = &jsMediaElementSourceNode
+	node.htmlElement = &jsHtmlElement
 
 	return node, nil
 }

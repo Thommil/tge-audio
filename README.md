@@ -33,8 +33,6 @@ sudo apt-get install libopenal-dev
 ## Limitations
 Only [StereoPannerNode](https://developer.mozilla.org/en-US/docs/Web/API/StereoPannerNode) and [GainNode](https://developer.mozilla.org/en-US/docs/Web/API/GainNode) are currently available, additional and custom [AudioNodes](https://developer.mozilla.org/en-US/docs/Web/API/AudioNode) and spacialization features are planned in future releases.
 
-Music source is not optimized and should be improved in future releases.
-
 Audio can't be started without user interaction on browsers, see details in [implementation](#implementation).
 
 ## Implementation
@@ -70,6 +68,7 @@ type AudioApp struct {
 
 func (app *AudioApp) OnCreate(settings *tge.Settings) error {
 	fmt.Println("OnCreate()")
+	settings.Fullscreen = true
 	return nil
 }
 
@@ -87,8 +86,8 @@ func (app *AudioApp) InitAudio() error {
 	var err error
 
 	//Buffer (should be done in a loading screen off course)
-	fmt.Println("Loading bass.wav in buffer")
-	if app.sampleBuffer, err = audio.CreateBuffer("bass.wav"); err != nil {
+	fmt.Println("Loading left-right.mp3 in buffer")
+	if app.sampleBuffer, err = audio.CreateBuffer("left-right.mp3"); err != nil {
 		return err
 	}
 
@@ -103,9 +102,27 @@ func (app *AudioApp) InitAudio() error {
 	if app.stereoPanNode, err = audio.CreateStereoPannerNode(); err != nil {
 		return err
 	}
-	
+
 	app.stereoPanNode.Connect(app.gainNode).Connect(app.destinationNode)
-    app.audioInit = true
+
+	//Music (should be done in a loading screen off course)
+	fmt.Println("Loading music.mp3 in media element")
+	var mediaElementSourceNode audio.MediaElementSourceNode
+	if mediaElementSourceNode, err = audio.CreateMediaElementSourceNode("music.mp3"); err != nil {
+		return err
+	}
+
+	var mediaElementGainNode audio.GainNode
+	if mediaElementGainNode, err = audio.CreateGainNode(); err != nil {
+		return err
+	}
+	mediaElementGainNode.Gain(0.3)
+	mediaElementSourceNode.Connect(mediaElementGainNode).Connect(app.destinationNode)
+
+	fmt.Println("Start playing music")
+	mediaElementSourceNode.Play(true)
+
+	app.audioInit = true
 
 	return nil
 }
@@ -142,7 +159,13 @@ func (app *AudioApp) OnMouseEvent(event tge.Event) bool {
 			fmt.Printf("ERROR: %s\n", err)
 		} else {
 			sourceNode.Connect(app.stereoPanNode)
-			sourceNode.Start(false, 0, 0)
+			if mouseEvent.X < app.width/2 {
+				// Left chunk
+				sourceNode.Start(0, 0, 0.5, false, 0, 0)
+			} else {
+				// Right chunk
+				sourceNode.Start(0, 0.5, 0.5, false, 0, 0)
+			}
 		}
 	}
 	return false
@@ -158,10 +181,10 @@ func (app *AudioApp) OnTick(elaspedTime time.Duration, syncChan chan<- interface
 
 func (app *AudioApp) OnPause() {
 	fmt.Println("OnPause()")
-    // Close sound
-    if app.audioInit {
-        app.gainNode.Disconnect(app.destinationNode)
-    }
+	// Close sound
+	if app.audioInit {
+		app.gainNode.Disconnect(app.destinationNode)
+	}
 }
 
 func (app *AudioApp) OnStop() {
