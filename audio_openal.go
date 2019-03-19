@@ -157,15 +157,61 @@ type bufferSourceNode struct {
 }
 
 func (n *bufferSourceNode) Start(delay, offset, duration float32, loop bool, loopStart, loopEnd float32) {
-	if n.sources[0].connected {
-		n.sources[0].handle.SetGain(n.sources[0].gain)
+	if delay > 0 {
+		delayDuration := time.Duration(delay * 1000000000)
+		go func() {
+			<-time.After(delayDuration)
+			if n.sources[0].connected {
+				n.sources[0].handle.SetGain(n.sources[0].gain)
+			}
+			al.PlaySources(n.sources[0].handle)
+			n.sources[0].handle.Setf(0x1024, offset) // OFFSET
+			b := *(n.buffer)
+			durationDuration := b.duration
+			if duration > 0 {
+				durationDuration = time.Duration(duration * 1000000000)
+			}
+			<-time.After(durationDuration)
+			if loop {
+				if loopEnd == 0 {
+					loopEnd = float32(b.duration.Nanoseconds()) / 1000000000
+				}
+				for true {
+					al.PlaySources(n.sources[0].handle)
+					n.sources[0].handle.Setf(0x1024, loopStart) // OFFSET
+					<-time.After(time.Duration((loopEnd - loopStart) * 1000000000))
+				}
+			} else {
+				n.Stop()
+			}
+		}()
+	} else {
+		if n.sources[0].connected {
+			n.sources[0].handle.SetGain(n.sources[0].gain)
+		}
+		al.PlaySources(n.sources[0].handle)
+		n.sources[0].handle.Setf(0x1024, offset) // OFFSET
+		go func() {
+			b := *(n.buffer)
+			durationDuration := b.duration
+			if duration > 0 {
+				durationDuration = time.Duration(duration * 1000000000)
+			}
+			<-time.After(durationDuration)
+			if loop {
+				if loopEnd == 0 {
+					loopEnd = float32(b.duration.Nanoseconds()) / 1000000000
+				}
+				for true {
+					al.PlaySources(n.sources[0].handle)
+					n.sources[0].handle.Setf(0x1024, loopStart) // OFFSET
+					<-time.After(time.Duration((loopEnd - loopStart) * 1000000000))
+				}
+			} else {
+				n.Stop()
+			}
+		}()
 	}
-	al.PlaySources(n.sources[0].handle)
-	go func() {
-		b := *(n.buffer)
-		<-time.After(b.duration)
-		n.Stop()
-	}()
 }
 
 func (n *bufferSourceNode) Stop() {
@@ -186,6 +232,10 @@ func (n *bufferSourceNode) Play(loop bool) {
 		n.sources[0].handle.SetGain(n.sources[0].gain)
 	}
 	al.PlaySources(n.sources[0].handle)
+	if loop {
+		n.sources[0].handle.Seti(0x1007, 1) //LOOP
+	}
+
 }
 
 func (n *bufferSourceNode) Pause() {
