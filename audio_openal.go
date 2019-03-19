@@ -8,6 +8,7 @@ package audio
 import (
 	"encoding/binary"
 	fmt "fmt"
+	"math"
 	filepath "path/filepath"
 	time "time"
 	unsafe "unsafe"
@@ -42,18 +43,22 @@ func (p *plugin) Init(runtime tge.Runtime) error {
 		if err != nil {
 			return err
 		}
-		al.SetListenerPosition(al.Vector{0, 0, 0})
-		al.SetListenerOrientation(al.Orientation{Forward: al.Vector{0, 0, -1}, Up: al.Vector{0, 1, 0}})
+
+		al.SetDistanceModel(al.LinearDistanceClamped)
 		sources := al.GenSources(sourcePoolSize)
 		for _, source := range sources {
 			source.SetMaxGain(1.0)
 			source.SetGain(0)
+			source.Setf(0x202, 1)    //AL_SOURCE_RELATIVE
+			source.Setf(0x1023, 1.5) //AL_MAX_DISTANCE
+			source.Setf(0x1020, 0.5) //AL_REFERENCE_DISTANCE
 			b := bufferSourceNode{
 				node: node{
 					sources: []*sourceProxy{&sourceProxy{
 						handle:    source,
 						connected: false,
 						gain:      1,
+						pan:       0,
 					}},
 					to: make([]connectListener, 0, 1),
 				},
@@ -147,6 +152,7 @@ type sourceProxy struct {
 	handle    al.Source
 	connected bool
 	gain      float32
+	pan       float32
 }
 
 // BufferSourceNode
@@ -163,6 +169,7 @@ func (n *bufferSourceNode) Start(delay, offset, duration float32, loop bool, loo
 			<-time.After(delayDuration)
 			if n.sources[0].connected {
 				n.sources[0].handle.SetGain(n.sources[0].gain)
+				n.sources[0].handle.SetPosition(al.Vector{n.sources[0].pan, 0, 0})
 			}
 			al.PlaySources(n.sources[0].handle)
 			n.sources[0].handle.Setf(0x1024, offset) // OFFSET
@@ -176,7 +183,7 @@ func (n *bufferSourceNode) Start(delay, offset, duration float32, loop bool, loo
 				if loopEnd == 0 {
 					loopEnd = float32(b.duration.Nanoseconds()) / 1000000000
 				}
-				for true {
+				for n.sources[0].handle.State() != al.Stopped {
 					al.PlaySources(n.sources[0].handle)
 					n.sources[0].handle.Setf(0x1024, loopStart) // OFFSET
 					<-time.After(time.Duration((loopEnd - loopStart) * 1000000000))
@@ -188,6 +195,7 @@ func (n *bufferSourceNode) Start(delay, offset, duration float32, loop bool, loo
 	} else {
 		if n.sources[0].connected {
 			n.sources[0].handle.SetGain(n.sources[0].gain)
+			n.sources[0].handle.SetPosition(al.Vector{n.sources[0].pan, 0, 0})
 		}
 		al.PlaySources(n.sources[0].handle)
 		n.sources[0].handle.Setf(0x1024, offset) // OFFSET
@@ -202,7 +210,7 @@ func (n *bufferSourceNode) Start(delay, offset, duration float32, loop bool, loo
 				if loopEnd == 0 {
 					loopEnd = float32(b.duration.Nanoseconds()) / 1000000000
 				}
-				for true {
+				for n.sources[0].handle.State() != al.Stopped {
 					al.PlaySources(n.sources[0].handle)
 					n.sources[0].handle.Setf(0x1024, loopStart) // OFFSET
 					<-time.After(time.Duration((loopEnd - loopStart) * 1000000000))
@@ -219,7 +227,9 @@ func (n *bufferSourceNode) Stop() {
 	if n.buffer != nil {
 		b := *(n.buffer)
 		n.sources[0].gain = 1
+		n.sources[0].pan = 0
 		n.sources[0].handle.SetGain(0)
+		n.sources[0].handle.SetPosition(al.Vector{0, 0, 0})
 		n.sources[0].handle.UnqueueBuffers(b.handle)
 		n.node.to = n.node.to[:0]
 		n.buffer = nil
@@ -230,6 +240,7 @@ func (n *bufferSourceNode) Stop() {
 func (n *bufferSourceNode) Play(loop bool) {
 	if n.sources[0].connected {
 		n.sources[0].handle.SetGain(n.sources[0].gain)
+		n.sources[0].handle.SetPosition(al.Vector{n.sources[0].pan, 0, 0})
 	}
 	al.PlaySources(n.sources[0].handle)
 	if loop {
@@ -274,15 +285,22 @@ type stereoPannerNode struct {
 }
 
 func (n *stereoPannerNode) Pan(value float32) {
-	n.pan = value
+	if math.Abs(float64(value)) > 0.7 {
+		n.pan = value
+	} else {
+		n.pan = 0
+	}
 	for _, source := range n.sources {
-		source.handle.SetPosition(al.Vector{n.pan, 0, 0})
+		source.pan = n.pan
+		if source.connected {
+			source.handle.SetPosition(al.Vector{n.pan, 0, 0})
+		}
 	}
 }
 
 func (n *stereoPannerNode) onConnectStateChanged(connected bool, sources []*sourceProxy) {
 	for _, source := range sources {
-		source.handle.SetPosition(al.Vector{n.pan, 0, 0})
+		source.pan = n.pan
 	}
 	n.node.onConnectStateChanged(connected, sources)
 }
