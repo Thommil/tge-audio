@@ -31,6 +31,8 @@ sudo apt-get install libopenal-dev
 ```
 
 ## Limitations
+Only Vorbis format (.ogg) is currently supported for audio files, MP3 will be eventually supported in future releases.
+
 Only [StereoPannerNode](https://developer.mozilla.org/en-US/docs/Web/API/StereoPannerNode) and [GainNode](https://developer.mozilla.org/en-US/docs/Web/API/GainNode) are currently available, additional and custom [AudioNodes](https://developer.mozilla.org/en-US/docs/Web/API/AudioNode) and spacialization features are planned in future releases.
 
 Audio can't be started without user interaction on browsers, see details in [implementation](#implementation).
@@ -56,14 +58,15 @@ import (
 )
 
 type AudioApp struct {
-	runtime         tge.Runtime
-	audioInit       bool
-	sampleBuffer    audio.Buffer
-	stereoPanNode   audio.StereoPannerNode
-	gainNode        audio.GainNode
-	destinationNode audio.DestinationNode
-	width           int32
-	height          int32
+	runtime                tge.Runtime
+	audioInit              bool
+	sampleBuffer           audio.Buffer
+	stereoPanNode          audio.StereoPannerNode
+	gainNode               audio.GainNode
+	destinationNode        audio.DestinationNode
+	mediaElementSourceNode audio.MediaElementSourceNode
+	width                  int32
+	height                 int32
 }
 
 func (app *AudioApp) OnCreate(settings *tge.Settings) error {
@@ -86,8 +89,8 @@ func (app *AudioApp) InitAudio() error {
 	var err error
 
 	//Buffer (should be done in a loading screen off course)
-	fmt.Println("Loading left-right.mp3 in buffer")
-	if app.sampleBuffer, err = audio.CreateBuffer("left-right.mp3"); err != nil {
+	fmt.Println("Loading left-right.ogg in buffer")
+	if app.sampleBuffer, err = audio.CreateBuffer("left-right.ogg"); err != nil {
 		return err
 	}
 
@@ -106,9 +109,8 @@ func (app *AudioApp) InitAudio() error {
 	app.stereoPanNode.Connect(app.gainNode).Connect(app.destinationNode)
 
 	//Music (should be done in a loading screen off course)
-	fmt.Println("Loading music.mp3 in media element")
-	var mediaElementSourceNode audio.MediaElementSourceNode
-	if mediaElementSourceNode, err = audio.CreateMediaElementSourceNode("music.mp3"); err != nil {
+	fmt.Println("Loading music.ogg in media element")
+	if app.mediaElementSourceNode, err = audio.CreateMediaElementSourceNode("music.ogg"); err != nil {
 		return err
 	}
 
@@ -117,10 +119,10 @@ func (app *AudioApp) InitAudio() error {
 		return err
 	}
 	mediaElementGainNode.Gain(0.3)
-	mediaElementSourceNode.Connect(mediaElementGainNode).Connect(app.destinationNode)
+	app.mediaElementSourceNode.Connect(mediaElementGainNode).Connect(app.destinationNode)
 
 	fmt.Println("Start playing music")
-	mediaElementSourceNode.Play(true)
+	app.mediaElementSourceNode.Play(true)
 
 	app.audioInit = true
 
@@ -132,6 +134,7 @@ func (app *AudioApp) OnResume() {
 	// Open sound
 	if app.audioInit {
 		app.gainNode.Connect(app.destinationNode)
+		app.mediaElementSourceNode.Play(true)
 	}
 }
 
@@ -184,6 +187,7 @@ func (app *AudioApp) OnPause() {
 	// Close sound
 	if app.audioInit {
 		app.gainNode.Disconnect(app.destinationNode)
+		app.mediaElementSourceNode.Pause()
 	}
 }
 
@@ -200,5 +204,6 @@ func (app *AudioApp) OnDispose() {
 func main() {
 	tge.Run(&AudioApp{})
 }
+
 ```
 

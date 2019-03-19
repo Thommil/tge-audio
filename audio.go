@@ -32,6 +32,8 @@ func (p *plugin) GetName() string {
 // Buffer interface represents a short audio asset residing in memory, created from an audio file
 // See https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer
 type Buffer interface {
+	// Delete the buffer and free associated memory
+	Delete()
 }
 
 // Node interface is a generic interface for representing an audio processing module.
@@ -70,6 +72,8 @@ type MediaElementSourceNode interface {
 	Play(loop bool)
 	// Pause the attached media
 	Pause()
+	// Delete node and free associated memory
+	Delete()
 }
 
 // DestinationNode interface represents the end destination of an audio graph in a given context — usually the speakers of your device
@@ -94,7 +98,7 @@ type GainNode interface {
 	Gain(value float32)
 }
 
-// CreateBuffer creates a Buffer from an assets path
+// CreateBuffer creates a Buffer from an assets path (supports: OGG only)
 func CreateBuffer(path string) (Buffer, error) {
 	return createBuffer(path)
 }
@@ -109,7 +113,7 @@ func CreateBufferSourceNode(buffer Buffer) (BufferSourceNode, error) {
 	return createBufferSourceNode(buffer)
 }
 
-// CreateMediaElementSourceNode creates a new MediaElementSourceNode from an assets path, not implemented yet
+// CreateMediaElementSourceNode creates a new MediaElementSourceNode from an assets path (supports: OGG only)
 func CreateMediaElementSourceNode(path string) (MediaElementSourceNode, error) {
 	return createMediaElementSourceNode(path)
 }

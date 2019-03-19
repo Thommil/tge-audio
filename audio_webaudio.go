@@ -44,6 +44,10 @@ type buffer struct {
 	value *js.Value
 }
 
+func (b *buffer) Delete() {
+	b.value = nil
+}
+
 type node struct {
 	value *js.Value
 }
@@ -106,6 +110,10 @@ func (n *bufferSourceNode) Stop() {
 type mediaElementSourceNode struct {
 	node
 	htmlElement *js.Value
+}
+
+func (n *mediaElementSourceNode) Delete() {
+	n.htmlElement.Call("remove")
 }
 
 func (n *mediaElementSourceNode) Play(loop bool) {
